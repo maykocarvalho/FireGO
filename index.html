@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🚨 FireGO 🚨</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    
+<div class="brand">
+  <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
+  <div class="brand-text">
+    <div class="brand-title">FireGO</div>
+    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+  </div>
+</div>
+
+    <h1>Entrar</h1>
+    <p class="help">Use seu <b>Identificador</b> (até 6 dígitos) e <b>Senha</b> (até 6 dígitos). Selecione a <b>Função</b> apenas para esta sessão.</p>
+
+    <div class="row cols-2">
+      <div>
+        <label for="login-id">Identificador</label>
+        <input id="login-id" inputmode="numeric" pattern="\d*" maxlength="6" placeholder="Ex.: 123456" autocomplete="username">
+      </div>
+      <div>
+        <label for="login-pass">Senha</label>
+        <input id="login-pass" type="password" inputmode="numeric" maxlength="6" placeholder="Somente números" autocomplete="current-password">
+      </div>
+    </div>
+
+    <label for="login-role">Função (sessão atual)</label>
+    <select id="login-role">
+      <option value="despachante">Despachante</option>
+      <option value="equipe">Integrante de Guarnição</option>
+    </select>
+
+    <div class="actions">
+      <button class="btn primary" id="btn-login">Entrar</button>
+      <button class="btn ghost" id="btn-show-register">Cadastrar novo usuário</button>
+    </div>
+    <div id="login-status" class="status" aria-live="polite"></div>
+
+    <hr class="sep">
+
+    <div id="register" style="display:none">
+      <h1>Novo cadastro</h1>
+      <p class="help">Para cadastrar, informe apenas <b>Identificador</b> e <b>Senha</b>.</p>
+
+      <div class="row cols-2">
+        <div>
+          <label for="reg-id">Identificador</label>
+          <input id="reg-id" inputmode="numeric" pattern="\d*" maxlength="6" placeholder="Ex.: 123456" autocomplete="username">
+        </div>
+        <div>
+          <label for="reg-pass">Senha</label>
+          <input id="reg-pass" type="password" inputmode="numeric" maxlength="6" placeholder="Somente números" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="btn-cancel">Cancelar</button>
+        <button class="btn primary" id="btn-register">Cadastrar</button>
+      </div>
+      <div id="reg-status" class="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <footer class="note">Dica: use “Live Server” (VS Code) para abrir via HTTP.</footer>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+  import { getDatabase, ref, child, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { firebaseConfig } from "./config.js";
+
+  if (!Object.keys(firebaseConfig).length) alert("⚠️ Preencha o firebaseConfig em config.js");
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  function onlyDigits(s){ return (s||'').replace(/\D+/g,'') }
+  function validId(s){ return /^\d{1,6}$/.test(s) }
+  function validPass(s){ return /^\d{1,6}$/.test(s) }
+  async function sha256(str){
+    const enc = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function setSession(u){ localStorage.setItem('session', JSON.stringify(u)); }
+  function clearSession(){ localStorage.removeItem('session'); }
+  function status(el,msg,type){ el.textContent=msg; el.className='status ' + (type||'') }
+
+  const $ = sel => document.querySelector(sel);
+  const loginId = $("#login-id"), loginPass=$("#login-pass"), loginRole=$("#login-role");
+  const regId=$("#reg-id"), regPass=$("#reg-pass");
+  const loginStatus=$("#login-status"), regStatus=$("#reg-status");
+  const regBox=$("#register");
+
+  $("#btn-show-register").onclick = () => { regBox.style.display='block'; status(regStatus,'',''); };
+  $("#btn-cancel").onclick = () => { regBox.style.display='none'; };
+
+  $("#btn-register").onclick = async () => {
+    const id = onlyDigits(regId.value);
+    const pass = onlyDigits(regPass.value);
+
+    if (!validId(id) || !validPass(pass)) {
+      status(regStatus,'Identificador e senha devem ter até 6 dígitos numéricos.','err');
+      return;
+    }
+    try {
+      const snap = await get(child(ref(db, 'users'), id));
+      if (snap.exists()) { status(regStatus,'Identificador já cadastrado.','err'); return; }
+      const passwordHash = await sha256(pass);
+      await set(ref(db, `users/${id}`), {
+        id, passwordHash, viaturas: [], createdAt: serverTimestamp()
+      });
+      status(regStatus,'Usuário cadastrado! Você já pode fazer login.','ok');
+      regId.value = ''; regPass.value = '';
+    } catch (e) {
+      console.error(e); status(regStatus,'Falha ao cadastrar.','err');
+    }
+  };
+
+  $("#btn-login").onclick = async () => {
+    const id = onlyDigits(loginId.value);
+    const pass = onlyDigits(loginPass.value);
+    const role = loginRole.value;
+    status(loginStatus,'','');
+
+    if (!validId(id) || !validPass(pass)) {
+      status(loginStatus,'Informe ID e senha (até 6 dígitos).','err'); return;
+    }
+    try {
+      const snap = await get(child(ref(db, 'users'), id));
+      if (!snap.exists()) { status(loginStatus,'Usuário não encontrado.','err'); return; }
+      const u = snap.val();
+      const hash = await sha256(pass);
+      if (hash !== u.passwordHash) { status(loginStatus,'Senha inválida.','err'); return; }
+
+      setSession({ id: u.id, role });
+      if (role === 'despachante') location.href = 'dispatcher.html';
+      else location.href = 'team-setup.html';
+    } catch (e) {
+      console.error(e); status(loginStatus,'Falha no login.','err');
+    }
+  };
+
+  clearSession();
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Painel | FireGO</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    
+<div class="brand">
+  <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
+  <div class="brand-text">
+    <div class="brand-title">FireGO</div>
+    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+  </div>
+</div>
+
+    <header class="bar">
+      <span class="badge" id="user-badge">—</span>
+      <div class="actions">
+        <a class="btn" href="team-setup.html">Alterar viaturas</a>
+        <a class="btn" href="index.html" id="btn-logout">Sair</a>
+      </div>
+    </header>
+
+    <h1>Painel de Acionamentos</h1>
+    <p class="help">Deixe esta página aberta. Você será alertado para acionamentos das <b>suas viaturas</b>.</p>
+
+    <div class="item">
+      <div><span class="k">Minhas viaturas:</span> <span class="v" id="mine">—</span></div>
+    </div>
+
+    <h1 style="margin-top:16px">Recebidos</h1>
+    <div id="list" class="list"></div>
+
+    <div id="empty" class="status">Nenhum acionamento ainda.</div>
+  </div>
+  <footer class="note">Dica: mantenha o volume ligado para ouvir o alerta sonoro.</footer>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+  import { getDatabase, ref, onChildAdded, query, limitToLast, get, child } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { firebaseConfig } from "./config.js";
+
+  const session = JSON.parse(localStorage.getItem('session')||'null');
+  if (!session || session.role !== 'equipe') location.href='index.html';
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  document.getElementById('user-badge').textContent = `ID ${session.id} • Guarnição`;
+  document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('session'); };
+
+  const mineEl = document.getElementById('mine'), listEl = document.getElementById('list'), emptyEl = document.getElementById('empty');
+  let mySet = new Set();
+
+  function fmt(ts){ try{ return new Date(ts).toLocaleString('pt-BR'); }catch{ return '—'; } }
+
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type='sine'; o.frequency.value=880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + 0.01);
+      o.start();
+      setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06); o.stop(ctx.currentTime + 0.07); }, 160);
+    }catch{}
+  }
+
+  function addCard(d){
+    const div = document.createElement('div'); div.className='item';
+    div.innerHTML = `
+      <div class="row">
+        <div><span class="k">Viatura:</span> <span class="v">${d.viatura||'—'}</span></div>
+        <div><span class="k">Data/Hora:</span> <span class="v">${fmt(d.createdAt)}</span></div>
+      </div>
+      <div class="row cols-2" style="margin-top:6px">
+        <div><span class="k">Endereço:</span> <span class="v">${d.endereco||'—'}</span></div>
+        <div><span class="k">Referência:</span> <span class="v">${d.referencia||'—'}</span></div>
+      </div>
+      <div style="margin-top:6px"><span class="k">Obs.:</span> <span class="v">${d.observacoes||'—'}</span></div>
+    `;
+    listEl.prepend(div);
+    emptyEl.style.display = 'none';
+  }
+
+  const us = await get(child(ref(db,'users'), session.id));
+  if (!us.exists() || !(us.val().viaturas||[]).length){
+    alert('Você não selecionou viaturas. Selecione agora.');
+    location.href='team-setup.html';
+  } else {
+    const arr = us.val().viaturas || [];
+    mySet = new Set(arr);
+    mineEl.textContent = arr.join(', ');
+  }
+
+  const q = query(ref(db,'dispatches'), limitToLast(20));
+  let firstLoad = true;
+  onChildAdded(q, (snap)=>{
+    const d = snap.val()||{};
+    const isMine = mySet.has(d.viatura);
+    if (!isMine) return;
+
+    addCard(d);
+    if (firstLoad) return;
+    beep();
+    alert(`🚨 ACIONAMENTO (${d.viatura})\nEndereço: ${d.endereco}\nRef.: ${d.referencia||'-'}\nObs.: ${d.observacoes||'-'}`);
+  });
+  setTimeout(()=>{ firstLoad=false; }, 500);
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Selecionar Viaturas | FireGO</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    
+<div class="brand">
+  <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
+  <div class="brand-text">
+    <div class="brand-title">FireGO</div>
+    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+  </div>
+</div>
+
+    <header class="bar">
+      <span class="badge" id="user-badge">—</span>
+      <div class="actions">
+        <a class="btn" href="index.html" id="btn-logout">Sair</a>
+      </div>
+    </header>
+
+    <h1>Minha Escala – Viaturas</h1>
+    <p class="help">Selecione as viaturas em que você está atuando agora. Você receberá alertas apenas dessas viaturas.</p>
+
+    <div class="checkbox-row">
+      <label class="checkbox"><input type="checkbox" value="ABT-1"> ABT-1</label>
+      <label class="checkbox"><input type="checkbox" value="ABT-2"> ABT-2</label>
+      <label class="checkbox"><input type="checkbox" value="UR-1"> UR-1</label>
+      <label class="checkbox"><input type="checkbox" value="UR-2"> UR-2</label>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="btn-save">Salvar Escala</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+  import { getDatabase, ref, set, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { firebaseConfig } from "./config.js";
+
+  const session = JSON.parse(localStorage.getItem('session')||'null');
+  if (!session || session.role !== 'equipe') location.href='index.html';
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  document.getElementById('user-badge').textContent = `ID ${session.id} • Guarnição`;
+  document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('session'); };
+
+  const statusEl=document.getElementById('status');
+  function status(m,t){ statusEl.textContent=m; statusEl.className='status '+(t||''); }
+
+  const inputs = [...document.querySelectorAll('input[type="checkbox"]')];
+  (async ()=>{
+    const snap = await get(child(ref(db,'users'), session.id));
+  })().catch(console.error);
+
+  (async ()=>{
+    const snap = await get(child(ref(db,'users'), session.id));
+    if (snap.exists()){
+      const { viaturas=[] } = snap.val();
+      inputs.forEach(i => i.checked = viaturas.includes(i.value));
+    }
+  })();
+
+  document.getElementById('btn-save').onclick = async ()=>{
+    const viaturas = inputs.filter(i=>i.checked).map(i=>i.value);
+    if (!viaturas.length){ status('Selecione pelo menos uma viatura.','err'); return; }
+    try{
+      await set(ref(db, `users/${session.id}/viaturas`), viaturas);
+      await set(ref(db, `users/${session.id}/viaturasUpdatedAt`), serverTimestamp());
+      status('Escala salva! Redirecionando para o painel…','ok');
+      setTimeout(()=> location.href='team-panel.html', 500);
+    }catch(e){ console.error(e); status('Falha ao salvar.','err'); }
+  };
+</script>
+</body>
+</html>

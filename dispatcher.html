@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Despachante | FireGO</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    
+<div class="brand">
+  <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
+  <div class="brand-text">
+    <div class="brand-title">FireGO</div>
+    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+  </div>
+</div>
+
+    <header class="bar">
+      <div><span class="badge" id="user-badge">—</span></div>
+      <div class="actions">
+        <a class="btn" href="index.html" id="btn-logout">Sair</a>
+      </div>
+    </header>
+
+    <h1>Acionar Viatura</h1>
+    <p class="help">Preencha e clique em <b>Acionar</b>. As equipes vinculadas à viatura receberão o alerta em tempo real.</p>
+
+    <form id="form">
+      <label for="viatura">Viatura</label>
+      <select id="viatura" required>
+        <option value="" disabled selected>Selecione…</option>
+        <option>ABT-1</option><option>ABT-2</option>
+        <option>UR-1</option><option>UR-2</option>
+      </select>
+
+      <div class="row cols-2">
+        <div>
+          <label for="endereco">Endereço</label>
+          <input id="endereco" required placeholder="Rua, número, bairro, cidade" autocomplete="street-address">
+        </div>
+        <div>
+          <label for="referencia">Referência</label>
+          <input id="referencia" placeholder="Ponto de referência (opcional)" autocomplete="on">
+        </div>
+      </div>
+
+      <label for="obs">Observações</label>
+      <textarea id="obs" placeholder="Ex.: Vítima consciente, acesso por rua lateral…"></textarea>
+
+      <div class="actions">
+        <button class="btn primary" type="submit">Acionar</button>
+        <button class="btn ghost" type="reset">Limpar</button>
+      </div>
+      <div id="status" class="status"></div>
+    </form>
+  </div>
+  <footer class="note">Abra o painel da equipe em outra aba para testar o alerta.</footer>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+  import { getDatabase, ref, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+  import { firebaseConfig } from "./config.js";
+
+  const session = JSON.parse(localStorage.getItem('session')||'null');
+  if (!session || session.role !== 'despachante') location.href='index.html';
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  document.getElementById('user-badge').textContent = `ID ${session.id} • Despachante`;
+  document.getElementById('btn-logout').onclick = () => { localStorage.removeItem('session'); };
+
+  const form = document.getElementById('form'), statusEl=document.getElementById('status');
+  function status(msg,t){ statusEl.textContent=msg; statusEl.className='status '+(t||''); }
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const viatura = document.getElementById('viatura').value.trim();
+    const endereco= document.getElementById('endereco').value.trim();
+    const referencia=document.getElementById('referencia').value.trim();
+    const obs = document.getElementById('obs').value.trim();
+    if (!viatura || !endereco){ status('Preencha os campos obrigatórios.','err'); return; }
+
+    try{
+      const node = push(ref(db,'dispatches'));
+      const payload = { id: node.key, viatura, endereco, referencia, observacoes: obs,
+                        createdAt: serverTimestamp(), status:'novo', by: session.id };
+      await set(node, payload);
+      await set(ref(db, `by_viatura/${viatura}/${node.key}`), payload);
+
+      form.reset(); document.getElementById('viatura').selectedIndex=0;
+      status('Acionamento enviado!','ok');
+    }catch(err){ console.error(err); status('Falha ao acionar.','err'); }
+  });
+</script>
+</body>
+</html>
