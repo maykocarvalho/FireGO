@@ -28,14 +28,14 @@ p.help{color:var(--muted); margin:0 0 18px}
 label{display:block; font-weight:600; margin:14px 0 6px}
 input,select,textarea{
   width:100%; background:#0a1324; border:1px solid #243252; color:var(--ink);
-  padding:12px 14px; border-radius:12px; outline:none
+  padding:14px 16px; border-radius:14px; outline:none; font-size:16px; min-height:48px;
 }
 textarea{min-height:90px; resize:vertical}
-.row{display:grid; gap:14px}
+.row{display:grid; gap:16px}
 .row.cols-2{grid-template-columns:1fr 1fr}
 .actions{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
 button{
-  border:0; border-radius:12px; padding:12px 16px; font-weight:700; cursor:pointer
+  border:0; border-radius:12px; padding:14px 16px; font-weight:700; cursor:pointer; min-height:48px; font-size:16px;
 }
 .btn{background:#18233a; color:var(--ink); border:1px solid #2a3959}
 .btn.primary{background:var(--accent); color:#fff; border-color:#b71c1c}
@@ -60,10 +60,16 @@ hr.sep{border:0;border-top:1px solid #22324d;margin:14px 0}
 .checkbox{
   display:flex; align-items:center; gap:8px; background:#0a1324; border:1px solid #22324d; padding:10px 12px; border-radius:10px
 }
+.checkbox input{ width:20px; height:20px }
+::placeholder { color: var(--muted); opacity: .9; }
+input:focus, select:focus, textarea:focus, button:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .link{color:var(--accent-2); text-decoration:none}
 .center{display:flex; align-items:center; justify-content:center}
 
-/* v9 Brand: logo left + text wordmark */
+/* Brand: logo left + text wordmark */
 .brand{ display:flex; align-items:center; gap:14px; justify-content:flex-start; margin:0 0 12px 0; }
 .unit-logo{ width: clamp(44px, 12vw, 72px); height:auto; display:block; border-radius:8px }
 .brand-text{ display:flex; flex-direction:column; align-items:flex-start; }
@@ -77,45 +83,10 @@ hr.sep{border:0;border-top:1px solid #22324d;margin:14px 0}
 }
 .brand-sub{
   margin-top:6px; font:600 clamp(9px, 2.6vw, 11px)/1 'Montserrat','Segoe UI',Roboto,Arial,sans-serif;
-  letter-spacing:2px; color:#cfd8dc; opacity:.9
+  letter-spacing:1.5px; color:#cfd8dc; opacity:.9
 }
 
-/* Mobile layout improvement */
-@media (max-width: 640px){
-  .brand{ gap:10px }
-  .wrap{ margin:24px auto }
-  .row.cols-2{ grid-template-columns: 1fr; }
-  .unit-logo{ width: clamp(44px, 12vw, 72px); letter-spacing:1.5px }
-}
-
-
-/* === v12: Mobile-friendly controls & layout === */
-
-/* Larger, easier-to-tap form controls */
-input, select, textarea {
-  font-size: 16px; /* prevents iOS zoom */
-  padding: 14px 16px;
-  min-height: 48px;
-  border-radius: 14px;
-}
-label { font-size: 15px; }
-button { min-height: 48px; font-size: 16px; }
-.actions .btn { padding: 14px 16px; }
-
-/* Better placeholders & focus ring */
-::placeholder { color: var(--muted); opacity: .9; }
-input:focus, select:focus, textarea:focus, button:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* Larger checkboxes */
-.checkbox input { width: 20px; height: 20px; }
-
-/* Roomier rows */
-.row { gap: 16px; }
-
-/* Responsive stacking and full-width actions on small screens */
+/* Responsive stacking */
 @media (max-width: 768px){
   .row.cols-2 { grid-template-columns: 1fr; }
   .actions { flex-direction: column; }

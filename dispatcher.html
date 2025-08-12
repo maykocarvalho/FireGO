@@ -14,7 +14,7 @@
   <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
   <div class="brand-text">
     <div class="brand-title">FireGO</div>
-    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+    <div class="brand-sub">Acionamento de viaturas CBMGO</div>
   </div>
 </div>
 
@@ -26,7 +26,7 @@
     </header>
 
     <h1>Acionar Viatura</h1>
-    <p class="help">Preencha e clique em <b>Acionar</b>. As equipes vinculadas à viatura receberão o alerta em tempo real.</p>
+    <p class="help">Preencha e clique em <b>Acionar</b>. As guarnições vinculadas à viatura receberão o alerta em tempo real.</p>
 
     <form id="form">
       <label for="viatura">Viatura</label>
@@ -39,11 +39,11 @@
       <div class="row cols-2">
         <div>
           <label for="endereco">Endereço</label>
-          <input id="endereco" required placeholder="Rua, número, bairro, cidade" autocomplete="street-address">
+          <input id="endereco" required autocomplete="street-address" placeholder="Rua, número, bairro, cidade">
         </div>
         <div>
           <label for="referencia">Referência</label>
-          <input id="referencia" placeholder="Ponto de referência (opcional)" autocomplete="on">
+          <input id="referencia" autocomplete="on" placeholder="Ponto de referência (opcional)">
         </div>
       </div>
 
@@ -57,7 +57,7 @@
       <div id="status" class="status"></div>
     </form>
   </div>
-  <footer class="note">Abra o painel da equipe em outra aba para testar o alerta.</footer>
+  <footer class="note">Abra o painel da guarnição em outra aba para testar o alerta.</footer>
 </div>
 
 <script type="module">

@@ -14,7 +14,7 @@
   <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
   <div class="brand-text">
     <div class="brand-title">FireGO</div>
-    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+    <div class="brand-sub">Acionamento de viaturas CBMGO</div>
   </div>
 </div>
 
@@ -60,10 +60,6 @@
   function status(m,t){ statusEl.textContent=m; statusEl.className='status '+(t||''); }
 
   const inputs = [...document.querySelectorAll('input[type="checkbox"]')];
-  (async ()=>{
-    const snap = await get(child(ref(db,'users'), session.id));
-  })().catch(console.error);
-
   (async ()=>{
     const snap = await get(child(ref(db,'users'), session.id));
     if (snap.exists()){

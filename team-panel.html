@@ -14,7 +14,7 @@
   <img class="unit-logo" src="assets/cbmgo_logo.png" alt="Insígnia do Batalhão">
   <div class="brand-text">
     <div class="brand-title">FireGO</div>
-    <div class="brand-sub">DISPATCH • REALTIME • TEAM</div>
+    <div class="brand-sub">Acionamento de viaturas CBMGO</div>
   </div>
 </div>
 
@@ -77,7 +77,7 @@
     div.innerHTML = `
       <div class="row">
         <div><span class="k">Viatura:</span> <span class="v">${d.viatura||'—'}</span></div>
-        <div><span class="k">Data/Hora:</span> <span class="v">${fmt(d.createdAt)}</span></div>
+        <div><span class="k">Data/Hora:</span> <span class="v">${fmt(d.createdAt)} </span></div>
       </div>
       <div class="row cols-2" style="margin-top:6px">
         <div><span class="k">Endereço:</span> <span class="v">${d.endereco||'—'}</span></div>
@@ -89,6 +89,7 @@
     emptyEl.style.display = 'none';
   }
 
+  // Load my vehicles
   const us = await get(child(ref(db,'users'), session.id));
   if (!us.exists() || !(us.val().viaturas||[]).length){
     alert('Você não selecionou viaturas. Selecione agora.');
@@ -99,6 +100,7 @@
     mineEl.textContent = arr.join(', ');
   }
 
+  // Listen to dispatches
   const q = query(ref(db,'dispatches'), limitToLast(20));
   let firstLoad = true;
   onChildAdded(q, (snap)=>{
